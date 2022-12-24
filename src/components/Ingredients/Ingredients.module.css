@@ -1,0 +1,10 @@
+.ingredients > div {
+  position: absolute;
+  /* outline: solid 1px white; */
+  margin-right: 1px;
+
+  touch-action: none;
+  -moz-user-select: none;
+  -webkit-user-drag: none;
+  user-select: none;
+}
