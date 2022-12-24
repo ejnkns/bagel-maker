@@ -11,9 +11,9 @@ type TextProps = {
 
 const Text = ({
   text,
-  color = "black",
+  // color = "black",
   opacity = 100,
-  imageSrc,
+  // imageSrc,
   animate,
 }: TextProps) => {
   const style: React.CSSProperties = {

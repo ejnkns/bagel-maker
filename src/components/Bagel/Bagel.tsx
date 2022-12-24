@@ -1,4 +1,5 @@
 import React from "react";
+import type { UseSpringsProps } from "@react-spring/web";
 import { useSprings, animated } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import { clamp, move } from "../dndHelpers";
@@ -14,7 +15,7 @@ export type BagelListProps = {
   bagelOrder: React.MutableRefObject<number[]>;
   width: number;
   elementHeight: number;
-  springFn: any;
+  springFn: (order: number[], active?: boolean, originalIndex?: number, curIndex?: number, y?: number) => (index: number) => UseSpringsProps
 };
 
 export const BagelList = ({

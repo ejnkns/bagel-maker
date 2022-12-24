@@ -1,3 +1,4 @@
+import type { UseSpringsProps } from "@react-spring/web";
 import type { SvgProps } from "../IngredientSvgs/types";
 
 export type JoinerFnProps = {
@@ -18,7 +19,7 @@ export type IngredientsProps = {
   items: Array<"empty" | React.FC<SvgProps>>;
   rows: number;
   cols: number;
-  springFn: any;
+  springFn: (order: number[], active?: boolean, originalIndex?: number, curIndex?: number, x?: number, y?: number) => (index: number) => UseSpringsProps
   ingredientsOrder: React.MutableRefObject<number[]>;
   elementSize: number;
   joiner?: Joiner;

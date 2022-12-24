@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useRef, useState } from "react";
 import { BagelListHOC } from "../Bagel";
 import { IngredientsHOC } from "../Ingredients";
 import { BagelSvg } from "../IngredientSvgs/BagelSvg";
