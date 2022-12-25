@@ -6,7 +6,7 @@ import type { IngredientsProps } from "./types";
 import { isSvgComponent } from "../Bagel/types";
 import styles from "./Ingredients.module.css";
 
-const GRID_COLOR = 'white';
+const GRID_COLOR = "white";
 
 export const Ingredients = ({
   items,
@@ -60,15 +60,19 @@ export const Ingredients = ({
         boxSizing: "border-box",
         margin: 0,
         display: "grid",
-        gridTemplateColumns: `repeat(${cols*2}, 0)`,
+        gridTemplateColumns: `repeat(${cols * 2}, 0)`,
         // css trick to draw a grid
         backgroundSize: `${elementSize}px ${elementSize}px`,
         backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent ${
           elementSize - 1
-        }px, ${GRID_COLOR} ${elementSize - 1}px, ${GRID_COLOR} ${elementSize}px), 
+        }px, ${GRID_COLOR} ${
+          elementSize - 1
+        }px, ${GRID_COLOR} ${elementSize}px), 
        repeating-linear-gradient(-90deg, transparent, transparent ${
          elementSize - 1
-       }px, ${GRID_COLOR} ${elementSize - 1}px, ${GRID_COLOR} ${elementSize}px)`,
+       }px, ${GRID_COLOR} ${
+          elementSize - 1
+        }px, ${GRID_COLOR} ${elementSize}px)`,
         borderRight: `1px solid ${GRID_COLOR}`,
         borderBottom: `1px solid ${GRID_COLOR}`,
       }}
@@ -92,18 +96,18 @@ export const Ingredients = ({
                 height: elementSize,
               }}
             >
-                <span
-                  style={{
-                    height: "100%",
-                    width: "100%",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <AnimatedComponent fill={fill} />
-                </span>
-                </animated.div>
+              <span
+                style={{
+                  height: "100%",
+                  width: "100%",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <AnimatedComponent fill={fill} />
+              </span>
+            </animated.div>
           );
         }
       })}

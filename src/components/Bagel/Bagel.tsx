@@ -15,7 +15,13 @@ export type BagelListProps = {
   bagelOrder: React.MutableRefObject<number[]>;
   width: number;
   elementHeight: number;
-  springFn: (order: number[], active?: boolean, originalIndex?: number, curIndex?: number, y?: number) => (index: number) => UseSpringsProps
+  springFn: (
+    order: number[],
+    active?: boolean,
+    originalIndex?: number,
+    curIndex?: number,
+    y?: number
+  ) => (index: number) => UseSpringsProps;
 };
 
 export const BagelList = ({
@@ -60,9 +66,9 @@ export const BagelList = ({
                 height: elementHeight,
                 width: elementHeight,
               }}
-              >
-                <AnimatedSvgComponent fill={fill} />
-              </animated.div>
+            >
+              <AnimatedSvgComponent fill={fill} />
+            </animated.div>
           );
         } else {
           return (
@@ -74,14 +80,12 @@ export const BagelList = ({
                 y,
                 scale,
                 fill,
-                userSelect: 'none',
+                userSelect: "none",
                 height: elementHeight,
                 width: elementHeight,
               }}
             >
-              <span className={styles.empty}>
-              +
-              </span>
+              <span className={styles.empty}>+</span>
             </animated.div>
           );
         }

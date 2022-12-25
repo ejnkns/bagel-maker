@@ -4,6 +4,8 @@ const defaultFill = "white";
 
 export const LettuceSvg = ({ fill = defaultFill, ...props }: SvgProps) => (
   <svg
+    width="100%"
+    height="100%"
     fill={fill}
     {...props}
     version="1.1"

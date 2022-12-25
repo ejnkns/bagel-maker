@@ -3,10 +3,13 @@ import { Ingredients } from "./Ingredients";
 import { calcOffsetX, calcOffsetY, calculateOffsetXYandFill } from "./helpers";
 import type { IngredientsProps } from "./types";
 
-export const IngredientsHOC = (props: Omit<IngredientsProps, "springFn"> & {
-  getEmptyBagelPoints: () => Array<{x: number; y: number}>,
-}) => {
-  const { cols, elementSize, getEmptyBagelPoints } = props;
+export const IngredientsHOC = (
+  props: Omit<IngredientsProps, "springFn"> & {
+    getEmptyBagelPoints: () => Array<{ x: number; y: number }>;
+    targetSize: number;
+  }
+) => {
+  const { cols, elementSize, getEmptyBagelPoints, targetSize } = props;
   const springFn =
     (
       order: number[],
@@ -23,12 +26,19 @@ export const IngredientsHOC = (props: Omit<IngredientsProps, "springFn"> & {
     (index: number) => {
       return active && index === originalIndex
         ? {
-            scale: 1.3,
             zIndex: 1,
             immediate: (key: string) => key === "zIndex",
             config: (key: string) =>
               key === "y" ? config.stiff : config.default,
-            ...(calculateOffsetXYandFill({x, y, index: curIndex, cols, elementSize, gravityPoints: getEmptyBagelPoints()})),
+            ...calculateOffsetXYandFill({
+              x,
+              y,
+              index: curIndex,
+              cols,
+              elementSize,
+              gravityPoints: getEmptyBagelPoints(),
+              targetSize,
+            }),
           }
         : {
             x: calcOffsetX(order.indexOf(index), cols, elementSize),
