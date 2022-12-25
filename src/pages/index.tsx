@@ -17,7 +17,9 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <BagelMaker />
+        <div className={styles.overflow}>
+          <BagelMaker />
+        </div>
       </main>
     </>
   );

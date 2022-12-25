@@ -5,7 +5,16 @@
   justify-content: center;
   */
   min-height: 100vh;
-  background-image: linear-gradient(to bottom, #000, #15162c);
+  background-image: linear-gradient(to bottom, #000, #000);
+}
+.overflow {
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+}
+.overflow::-webkit-scrollbar { /* WebKit */
+    width: 0;
+    height: 0;
 }
 
 .container {

@@ -22,7 +22,9 @@ export const Ingredients = ({
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
-      api.start(springFn(order.current, active, originalIndex, curIndex, x, y)); // Feed springs new style data, they'll animate the view without causing a single render
+
+      // Feed springs new style data, they'll animate the view without causing a single render
+      api.start(springFn(order.current, active, originalIndex, curIndex, x, y));
     },
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
