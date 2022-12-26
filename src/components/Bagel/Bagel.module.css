@@ -1,7 +1,6 @@
 .bagel {
   display: flex;
   position: relative;
-  overflow: hidden;
 }
 
 .bagel > div {

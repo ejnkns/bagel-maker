@@ -89,7 +89,7 @@ export const BagelMaker = () => {
   });
 
   return transitions((style, item) => (
-    <animated.div style={{...style, overflowY: 'hidden'}}>
+    <animated.div style={{...style }}>
       {item}
       <div
         key={`${width}x${height}}`}

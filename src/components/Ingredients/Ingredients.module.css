@@ -1,7 +1,6 @@
 .ingredients {
   display: flex;
   position: relative;
-  overflow: hidden;
 }
 
 .ingredients > div {
