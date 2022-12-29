@@ -17,7 +17,7 @@ export const IngredientsHOC = (
       // the original index input to the component
       originalIndex = 0,
       // the from index of the element being dragged
-      // i.e index of originalIndex in the current order
+      // i.e index of originalIndex in order.current when dragging began
       curIndex = 0,
       x = 0,
       y = 0

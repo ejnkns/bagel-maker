@@ -6,8 +6,9 @@ import { BagelSvg } from "../IngredientSvgs/BagelSvg";
 import { LettuceSvg } from "../IngredientSvgs/LettuceSvg";
 import type { BagelType, IngredientsType } from "./types";
 import useWindowDimensions from "./hooks";
+import { SaveBagel } from "../SaveBagel/SaveBagel";
 
-// component with state for bagel and its ingredients to pass to IngredientsHOC and BagelList
+// component with state for, screensize, bagel and its ingredients to pass to IngredientsHOC, BagelListHOC, and SaveBagel
 export const BagelMaker = () => {
   console.count("rerender");
 
@@ -82,85 +83,71 @@ export const BagelMaker = () => {
     [BAGEL_ELEMENT_HEIGHT, defaultBagel.length]
   );
 
-  const transitions = useTransition([loading], {
-    from: { opacity: 0 },
-    enter: { opacity: 1 },
-    leave: { opacity: 1 },
-  });
+  return (
+    <div
+      key={`${width}x${height}}`}
+      style={{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: PADDING,
+        paddingTop: PADDING / 4,
+      }}
+    >
+      <IngredientsHOC
+        items={defaultIngredients}
+        rows={INGREDIENTS_ROWS}
+        cols={INGREDIENTS_COLS}
+        ingredientsOrder={ingredientsOrder}
+        elementSize={INGREDIENTS_CELL_SIZE}
+        targetSize={BAGEL_ELEMENT_HEIGHT}
+        getEmptyBagelPoints={getEmptyBagelPoints}
+        joiner={{
+          conditionFn: ({ itemX, itemY }) => {
+            // could do things like limit to only 1 bagel top and 1 bagel bottom here
+            if (itemX < minX || itemX > maxX || itemY < minY || itemY > maxY) {
+              // console.log(`not in bounds: "x: ${{itemX}}, y: ${{itemY}}"`)
+              return false;
+            }
 
-  return transitions((style, item) => (
-    <animated.div style={{...style }}>
-      {item}
-      <div
-        key={`${width}x${height}}`}
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "center",
-          gap: PADDING,
-          paddingTop: PADDING / 4,
+            const index = getBagelIndex(itemY);
+            const bagelIndex = bagelOrder.current[index];
+            const bagelItem = bagelIndex && defaultBagel[bagelIndex];
+
+            if (bagelItem !== "empty") {
+              return false;
+            }
+
+            return true;
+          },
+          itemFn: ({ item, itemY, itemIndex }) => {
+            // add it to the defaultBagel state which will cause a render
+            // and update the refs
+            setDefaultBagel((defaultBagelValue) => {
+              // reordering the bagel according to the bagelOrder ref
+              const newBagel = [...defaultBagelValue];
+              const orderedIndex = bagelOrder.current[getBagelIndex(itemY)];
+              if (orderedIndex) newBagel[orderedIndex] = item;
+
+              return newBagel;
+            });
+
+            // replace it with "empty" in the defaultIngredients state
+            setDefaultIngredients((defaultIngredientsValue) => {
+              const newIngredients = [...defaultIngredientsValue];
+              newIngredients[itemIndex] = "empty";
+
+              return newIngredients;
+            });
+          },
         }}
-      >
-        <IngredientsHOC
-          items={defaultIngredients}
-          rows={INGREDIENTS_ROWS}
-          cols={INGREDIENTS_COLS}
-          ingredientsOrder={ingredientsOrder}
-          elementSize={INGREDIENTS_CELL_SIZE}
-          targetSize={BAGEL_ELEMENT_HEIGHT}
-          getEmptyBagelPoints={getEmptyBagelPoints}
-          joiner={{
-            conditionFn: ({ itemX, itemY }) => {
-              // could do things like limit to only 1 bagel top and 1 bagel bottom here
-              if (
-                itemX < minX ||
-                itemX > maxX ||
-                itemY < minY ||
-                itemY > maxY
-              ) {
-                // console.log(`not in bounds: "x: ${{itemX}}, y: ${{itemY}}"`)
-                return false;
-              }
-
-              const index = getBagelIndex(itemY);
-              const bagelIndex = bagelOrder.current[index];
-              const bagelItem = bagelIndex && defaultBagel[bagelIndex];
-
-              if (bagelItem !== "empty") {
-                return false;
-              }
-
-              return true;
-            },
-            itemFn: ({ item, itemY, itemIndex }) => {
-              // add it to the defaultBagel state which will cause a render
-              // and update the refs
-              setDefaultBagel((defaultBagelValue) => {
-                // reordering the bagel according to the bagelOrder ref
-                const newBagel = [...defaultBagelValue];
-                const orderedIndex = bagelOrder.current[getBagelIndex(itemY)];
-                if (orderedIndex) newBagel[orderedIndex] = item;
-
-                return newBagel;
-              });
-
-              // replace it with "empty" in the defaultIngredients state
-              setDefaultIngredients((defaultIngredientsValue) => {
-                const newIngredients = [...defaultIngredientsValue];
-                newIngredients[itemIndex] = "empty";
-
-                return newIngredients;
-              });
-            },
-          }}
-        />
-        <BagelListHOC
-          width={BAGEL_LIST_WIDTH}
-          elementHeight={BAGEL_ELEMENT_HEIGHT}
-          items={defaultBagel}
-          bagelOrder={bagelOrder}
-        />
-      </div>
-    </animated.div>
-  ));
+      />
+      <BagelListHOC
+        width={BAGEL_LIST_WIDTH}
+        elementHeight={BAGEL_ELEMENT_HEIGHT}
+        items={defaultBagel}
+        bagelOrder={bagelOrder}
+      />
+    </div>
+  );
 };

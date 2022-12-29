@@ -84,7 +84,7 @@ export const Ingredients = ({
         if (isSvgComponent(item)) {
           // is it much less performant to have two animted divs nested here than one?
           // could move all animation to the svg component
-          const AnimatedComponent = animated(item);
+          const AnimatedSvgComponent = animated(item);
           return (
             <animated.div
               {...bind(i)}
@@ -107,7 +107,7 @@ export const Ingredients = ({
                   alignItems: "center",
                 }}
               >
-                <AnimatedComponent fill={fill} />
+                <AnimatedSvgComponent fill={fill} />
               </span>
             </animated.div>
           );
