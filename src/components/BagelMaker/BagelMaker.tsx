@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BagelListHOC } from "../Bagel";
 import { IngredientsHOC } from "../Ingredients";
-import { LettuceSvg } from "../IngredientSvgs/LettuceSvg";
 import useWindowDimensions from "./hooks";
-import { Bagel, IngredientType } from "@prisma/client";
+import type { Bagel } from "@prisma/client";
+import { IngredientType } from "@prisma/client";
 
 type BagelMakerProps = {
   userBagel?: Bagel;
@@ -27,18 +27,25 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   const PADDING = isPortrait ? Math.round(width / 4) : Math.round(height / 4);
   const DROP_PADDING = BAGEL_LIST_WIDTH / 2;
 
-  const [defaultBagel, setDefaultBagel] = useState<IngredientType[]>(userBagel?.ingredients ? userBagel.ingredients : new Array(5).fill(IngredientType.EMPTY));
+  const [defaultBagel, setDefaultBagel] = useState<IngredientType[]>(
+    userBagel?.ingredients
+      ? userBagel.ingredients
+      : new Array(5).fill(IngredientType.EMPTY)
+  );
 
   useEffect(() => {
-    if (userBagel?.ingredients) setDefaultBagel(userBagel?.ingredients)
-  }, [userBagel])
+    if (userBagel?.ingredients) setDefaultBagel(userBagel?.ingredients);
+  }, [userBagel]);
 
   const bagelOrder = useRef(defaultBagel.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
   const elementSizeDiff = BAGEL_ELEMENT_HEIGHT - INGREDIENTS_CELL_SIZE;
   const getEmptyBagelPoints = useCallback(
     () =>
       defaultBagel.reduce((acc, item, index) => {
-        if (item === IngredientType.EMPTY && bagelOrder.current[index] !== undefined) {
+        if (
+          item === IngredientType.EMPTY &&
+          bagelOrder.current[index] !== undefined
+        ) {
           acc.push({
             y:
               bagelOrder.current.indexOf(index) * BAGEL_ELEMENT_HEIGHT +
@@ -60,9 +67,9 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
     ]
   );
 
-  const [defaultIngredients, setDefaultIngredients] = useState<IngredientType[]>(
-    new Array(3).fill(IngredientType.LETTUCE)
-  );
+  const [defaultIngredients, setDefaultIngredients] = useState<
+    IngredientType[]
+  >(new Array(3).fill(IngredientType.LETTUCE));
   const ingredientsOrder = useRef(defaultIngredients.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
 
   const middleBagelX =

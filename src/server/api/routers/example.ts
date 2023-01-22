@@ -2,7 +2,6 @@ import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 
-
 export const exampleRouter = createTRPCRouter({
   hello: publicProcedure
     .input(z.object({ text: z.string() }))
@@ -25,10 +24,12 @@ export const exampleRouter = createTRPCRouter({
   }),
 
   putBagel: protectedProcedure
-    .input(z.object({ 
-      ingredients: z.any(),//z.array(z.enum(["BAGEL", "LETTUCE", "EMPTY"])),
-      userId: z.string()
-  }))
+    .input(
+      z.object({
+        ingredients: z.any(), //z.array(z.enum(["BAGEL", "LETTUCE", "EMPTY"])),
+        userId: z.string(),
+      })
+    )
     .mutation(({ ctx, input }) => {
       return ctx.prisma.bagel.create({
         data: {
@@ -44,6 +45,5 @@ export const exampleRouter = createTRPCRouter({
           },
         },
       });
-    }
-  ),
+    }),
 });

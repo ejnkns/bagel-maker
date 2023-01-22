@@ -7,7 +7,7 @@ import styles from "./Bagel.module.css";
 import { useSession } from "next-auth/react";
 import { api } from "../../utils/api";
 import { IngredientType } from "@prisma/client";
-import { bagelStringArrayToComponentArray, bagelStringToComponentMap, reorderBagel } from "../BagelMaker/helpers";
+import { bagelStringToComponentMap, reorderBagel } from "../BagelMaker/helpers";
 
 // This component is a modified version of this: https://codesandbox.io/s/github/pmndrs/use-gesture/tree/main/demo/src/sandboxes/draggable-list
 // from use-gesture examples: https://use-gesture.netlify.app/docs/examples/
@@ -47,7 +47,7 @@ export const BagelList = ({
     if (!sessionData || !sessionData.user) return;
     setSaved(true);
     // start spring for each item in the bagel that moves them towards its center point
-      bagelOrder.current.forEach((item, index) => {
+    bagelOrder.current.forEach((item, index) => {
       springApi.start(
         springFn({
           order: bagelOrder.current,
@@ -60,12 +60,15 @@ export const BagelList = ({
     });
 
     // save bagel to prisma db for user
-    const ingredients = reorderBagel({bagel: items, order: bagelOrder.current})
-    console.log(ingredients)
+    const ingredients = reorderBagel({
+      bagel: items,
+      order: bagelOrder.current,
+    });
+    console.log(ingredients);
     mutation.mutate({
       ingredients,
-      userId: sessionData.user.id
-    })
+      userId: sessionData.user.id,
+    });
   };
 
   const bind = useDrag(({ args: [originalIndex], active, movement: [, y] }) => {
@@ -114,7 +117,8 @@ export const BagelList = ({
             // could move all animation to the svg component
             // console.log(item)
             const ItemComponent = bagelStringToComponentMap[item];
-            const AnimatedSvgComponent = ItemComponent && animated(ItemComponent);
+            const AnimatedSvgComponent =
+              ItemComponent && animated(ItemComponent);
             return (
               <animated.div
                 {...bind(i)}

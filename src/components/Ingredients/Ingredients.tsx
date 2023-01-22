@@ -18,21 +18,27 @@ export const Ingredients = ({
   elementSize,
   joiner,
 }: IngredientsProps) => {
-  console.log(items)
-  const [springs, springApi] = useSprings(items.length, springFn(order.current));
+  console.log(items);
+  const [springs, springApi] = useSprings(
+    items.length,
+    springFn(order.current)
+  );
 
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
 
       // Feed springs new style data, they'll animate the view without causing a single render
-      springApi.start(springFn(order.current, active, originalIndex, curIndex, x, y));
+      springApi.start(
+        springFn(order.current, active, originalIndex, curIndex, x, y)
+      );
     },
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
       const item = items[curIndex];
       if (
-        item && item !== IngredientType.EMPTY &&
+        item &&
+        item !== IngredientType.EMPTY &&
         joiner &&
         (!joiner.conditionFn ||
           joiner.conditionFn({
@@ -86,9 +92,9 @@ export const Ingredients = ({
         if (item && item !== IngredientType.EMPTY) {
           // is it much less performant to have two animted divs nested here than one?
           // could move all animation to the svg component
-            console.log('ingredients item:', item)
-            const ItemComponent = bagelStringToComponentMap[item];
-            const AnimatedSvgComponent = ItemComponent && animated(ItemComponent);
+          console.log("ingredients item:", item);
+          const ItemComponent = bagelStringToComponentMap[item];
+          const AnimatedSvgComponent = ItemComponent && animated(ItemComponent);
           return (
             <animated.div
               {...bind(i)}

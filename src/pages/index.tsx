@@ -28,9 +28,9 @@ const Home: NextPage = () => {
           <BagelMaker userBagel={secretBagel && secretBagel[0]} />
         </div>
         <div className={styles.showcaseContainer}>
-            <p className={styles.showcaseText}>
-              {hello.data ? hello.data.greeting : "Loading tRPC query..."}
-            </p>
+          <p className={styles.showcaseText}>
+            {hello.data ? hello.data.greeting : "Loading tRPC query..."}
+          </p>
           <AuthShowcase />
         </div>
       </main>
