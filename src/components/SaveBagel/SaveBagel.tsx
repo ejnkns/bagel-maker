@@ -1,5 +1,5 @@
-import { isSvgComponent } from "../Bagel/types";
-import type { BagelType } from "../BagelMaker/types";
+import { IngredientType } from "@prisma/client";
+import { bagelStringToComponentMap } from "../BagelMaker/helpers";
 
 const SCALE = 0.75;
 
@@ -8,12 +8,12 @@ export const SaveBagel = ({
   width,
   elementHeight,
 }: {
-  items: BagelType;
+  items: IngredientType[];
   width: number;
   elementHeight: number;
 }) => {
   const height =
-    bagel.filter((Ingredient) => isSvgComponent(Ingredient)).length *
+    bagel.filter((ingredient) => (ingredient !== IngredientType.EMPTY)).length *
     elementHeight *
     SCALE;
   return (
@@ -27,8 +27,9 @@ export const SaveBagel = ({
         alignItems: "center",
       }}
     >
-      {bagel.map((Ingredient, index) => {
-        if (isSvgComponent(Ingredient)) {
+      {bagel.map((ingredient, index) => {
+        if (ingredient !== IngredientType.EMPTY) {
+          const Ingredient = bagelStringToComponentMap[ingredient];
           return <Ingredient key={`saved-bagel-ingredient-${index}`} />;
         }
       })}

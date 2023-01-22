@@ -14,7 +14,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   console.count("rerender");
 
   // widths and heights of the BagelList and IngredientsHOC components and elements
-  const { width, height, loading } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
 
   const isPortrait = height > width;
   const INGREDIENTS_CELL_SIZE = isPortrait
