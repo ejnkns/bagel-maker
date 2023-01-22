@@ -3,14 +3,16 @@ import type { UseSpringsProps } from "@react-spring/web";
 import { useSprings, animated } from "@react-spring/web";
 import { useDrag } from "@use-gesture/react";
 import { clamp, move } from "../dndHelpers";
-import type { SvgProps } from "../IngredientSvgs/types";
-import { isSvgComponent } from "./types";
 import styles from "./Bagel.module.css";
+import { useSession } from "next-auth/react";
+import { api } from "../../utils/api";
+import { IngredientType } from "@prisma/client";
+import { bagelStringArrayToComponentArray, bagelStringToComponentMap, reorderBagel } from "../BagelMaker/helpers";
 
 // This component is a modified version of this: https://codesandbox.io/s/github/pmndrs/use-gesture/tree/main/demo/src/sandboxes/draggable-list
 // from use-gesture examples: https://use-gesture.netlify.app/docs/examples/
 export type BagelListProps = {
-  items: Array<"empty" | React.FC<SvgProps>>;
+  items: IngredientType[];
   bagelOrder: React.MutableRefObject<number[]>;
   width: number;
   elementHeight: number;
@@ -32,17 +34,21 @@ export const BagelList = ({
   springFn,
 }: BagelListProps) => {
   // Create springs, each corresponds to an item, controlling its transform, scale, etc.
-  const [springs, api] = useSprings(
+  const [springs, springApi] = useSprings(
     items.length,
     springFn({ order: bagelOrder.current })
   );
   const [saved, setSaved] = React.useState(false);
 
+  const { data: sessionData } = useSession();
+  const mutation = api.example.putBagel.useMutation();
+
   const handleSave = () => {
+    if (!sessionData || !sessionData.user) return;
     setSaved(true);
     // start spring for each item in the bagel that moves them towards its center point
-    bagelOrder.current.forEach((item, index) => {
-      api.start(
+      bagelOrder.current.forEach((item, index) => {
+      springApi.start(
         springFn({
           order: bagelOrder.current,
           saved: true,
@@ -52,6 +58,14 @@ export const BagelList = ({
         })
       );
     });
+
+    // save bagel to prisma db for user
+    const ingredients = reorderBagel({bagel: items, order: bagelOrder.current})
+    console.log(ingredients)
+    mutation.mutate({
+      ingredients,
+      userId: sessionData.user.id
+    })
   };
 
   const bind = useDrag(({ args: [originalIndex], active, movement: [, y] }) => {
@@ -61,7 +75,7 @@ export const BagelList = ({
     const curRow = clamp(tempRow, 0, items.length - 1);
     const newOrder = move(bagelOrder.current, curIndex, curRow);
 
-    api.start(
+    springApi.start(
       springFn({ order: newOrder, active, originalIndex, curIndex, y })
     ); // Feed springs new style data, they'll animate the view without causing a single render
 
@@ -76,7 +90,7 @@ export const BagelList = ({
       >
         {springs.map(({ zIndex, y, scale, fill, opacity }, i) => {
           const item = items[i];
-          if (!isSvgComponent(item)) {
+          if (!item || item === IngredientType.EMPTY) {
             return (
               <animated.div
                 {...bind(i)}
@@ -98,7 +112,9 @@ export const BagelList = ({
           } else {
             // is it much less performant to have two animted divs nested here than one?
             // could move all animation to the svg component
-            const AnimatedSvgComponent = animated(item);
+            // console.log(item)
+            const ItemComponent = bagelStringToComponentMap[item];
+            const AnimatedSvgComponent = ItemComponent && animated(ItemComponent);
             return (
               <animated.div
                 {...bind(i)}

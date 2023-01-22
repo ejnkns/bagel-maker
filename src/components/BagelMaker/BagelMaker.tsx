@@ -1,19 +1,21 @@
-import React, { useCallback, useRef, useState } from "react";
-import { useTransition, animated } from "@react-spring/web";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BagelListHOC } from "../Bagel";
 import { IngredientsHOC } from "../Ingredients";
-import { BagelSvg } from "../IngredientSvgs/BagelSvg";
 import { LettuceSvg } from "../IngredientSvgs/LettuceSvg";
-import type { BagelType, IngredientsType } from "./types";
 import useWindowDimensions from "./hooks";
-import { SaveBagel } from "../SaveBagel/SaveBagel";
+import { Bagel, IngredientType } from "@prisma/client";
+
+type BagelMakerProps = {
+  userBagel?: Bagel;
+};
 
 // component with state for, screensize, bagel and its ingredients to pass to IngredientsHOC, BagelListHOC, and SaveBagel
-export const BagelMaker = () => {
+export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   console.count("rerender");
 
   // widths and heights of the BagelList and IngredientsHOC components and elements
   const { width, height, loading } = useWindowDimensions();
+
   const isPortrait = height > width;
   const INGREDIENTS_CELL_SIZE = isPortrait
     ? Math.round(width / 8)
@@ -25,19 +27,18 @@ export const BagelMaker = () => {
   const PADDING = isPortrait ? Math.round(width / 4) : Math.round(height / 4);
   const DROP_PADDING = BAGEL_LIST_WIDTH / 2;
 
-  const [defaultBagel, setDefaultBagel] = useState<BagelType>([
-    BagelSvg,
-    "empty",
-    "empty",
-    "empty",
-    BagelSvg,
-  ]);
+  const [defaultBagel, setDefaultBagel] = useState<IngredientType[]>(userBagel?.ingredients ? userBagel.ingredients : new Array(5).fill(IngredientType.EMPTY));
+
+  useEffect(() => {
+    if (userBagel?.ingredients) setDefaultBagel(userBagel?.ingredients)
+  }, [userBagel])
+
   const bagelOrder = useRef(defaultBagel.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
   const elementSizeDiff = BAGEL_ELEMENT_HEIGHT - INGREDIENTS_CELL_SIZE;
   const getEmptyBagelPoints = useCallback(
     () =>
       defaultBagel.reduce((acc, item, index) => {
-        if (item === "empty" && bagelOrder.current[index] !== undefined) {
+        if (item === IngredientType.EMPTY && bagelOrder.current[index] !== undefined) {
           acc.push({
             y:
               bagelOrder.current.indexOf(index) * BAGEL_ELEMENT_HEIGHT +
@@ -59,8 +60,8 @@ export const BagelMaker = () => {
     ]
   );
 
-  const [defaultIngredients, setDefaultIngredients] = useState<IngredientsType>(
-    new Array(3).fill(LettuceSvg)
+  const [defaultIngredients, setDefaultIngredients] = useState<IngredientType[]>(
+    new Array(3).fill(IngredientType.LETTUCE)
   );
   const ingredientsOrder = useRef(defaultIngredients.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
 
@@ -85,7 +86,7 @@ export const BagelMaker = () => {
 
   return (
     <div
-      key={`${width}x${height}}`}
+      key={`${width}x${height}-${defaultBagel.join("-")}`}
       style={{
         display: "flex",
         flexDirection: "row",
@@ -114,7 +115,7 @@ export const BagelMaker = () => {
             const bagelIndex = bagelOrder.current[index];
             const bagelItem = bagelIndex && defaultBagel[bagelIndex];
 
-            if (bagelItem !== "empty") {
+            if (bagelItem !== IngredientType.EMPTY) {
               return false;
             }
 
@@ -135,7 +136,7 @@ export const BagelMaker = () => {
             // replace it with "empty" in the defaultIngredients state
             setDefaultIngredients((defaultIngredientsValue) => {
               const newIngredients = [...defaultIngredientsValue];
-              newIngredients[itemIndex] = "empty";
+              newIngredients[itemIndex] = IngredientType.EMPTY;
 
               return newIngredients;
             });

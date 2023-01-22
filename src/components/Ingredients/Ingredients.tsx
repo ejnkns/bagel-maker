@@ -3,8 +3,9 @@ import { useSprings, animated } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 import { calcOffsetX, calcOffsetY } from "./helpers";
 import type { IngredientsProps } from "./types";
-import { isSvgComponent } from "../Bagel/types";
 import styles from "./Ingredients.module.css";
+import { bagelStringToComponentMap } from "../BagelMaker/helpers";
+import { IngredientType } from "@prisma/client";
 
 const GRID_COLOR = "white";
 
@@ -17,20 +18,21 @@ export const Ingredients = ({
   elementSize,
   joiner,
 }: IngredientsProps) => {
-  const [springs, api] = useSprings(items.length, springFn(order.current));
+  console.log(items)
+  const [springs, springApi] = useSprings(items.length, springFn(order.current));
 
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
 
       // Feed springs new style data, they'll animate the view without causing a single render
-      api.start(springFn(order.current, active, originalIndex, curIndex, x, y));
+      springApi.start(springFn(order.current, active, originalIndex, curIndex, x, y));
     },
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
       const item = items[curIndex];
       if (
-        isSvgComponent(item) &&
+        item && item !== IngredientType.EMPTY &&
         joiner &&
         (!joiner.conditionFn ||
           joiner.conditionFn({
@@ -81,10 +83,12 @@ export const Ingredients = ({
     >
       {springs.map(({ zIndex, y, x, scale, fill }, i) => {
         const item = items[i];
-        if (isSvgComponent(item)) {
+        if (item && item !== IngredientType.EMPTY) {
           // is it much less performant to have two animted divs nested here than one?
           // could move all animation to the svg component
-          const AnimatedSvgComponent = animated(item);
+            console.log('ingredients item:', item)
+            const ItemComponent = bagelStringToComponentMap[item];
+            const AnimatedSvgComponent = ItemComponent && animated(ItemComponent);
           return (
             <animated.div
               {...bind(i)}

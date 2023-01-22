@@ -1,8 +1,8 @@
+import type { IngredientType } from "@prisma/client";
 import type { UseSpringsProps } from "@react-spring/web";
-import type { SvgProps } from "../IngredientSvgs/types";
 
 export type JoinerFnProps = {
-  item: React.FC<SvgProps>;
+  item: IngredientType;
   itemIndex: number;
   // X and Y are relative to the top right of the ingredient grid
   itemX: number;
@@ -16,7 +16,7 @@ type Joiner = {
 };
 
 export type IngredientsProps = {
-  items: Array<"empty" | React.FC<SvgProps>>;
+  items: IngredientType[];
   rows: number;
   cols: number;
   springFn: (
