@@ -1,5 +1,5 @@
 import { z } from "zod";
-
+import { v4 as uuidv4 } from "uuid";
 import { createTRPCRouter, publicProcedure, protectedProcedure } from "../trpc";
 
 export const exampleRouter = createTRPCRouter({
@@ -26,17 +26,18 @@ export const exampleRouter = createTRPCRouter({
   putBagel: protectedProcedure
     .input(
       z.object({
-        ingredients: z.any(), //z.array(z.enum(["BAGEL", "LETTUCE", "EMPTY"])),
+        name: z.string(),
+        ingredients: z.array(z.enum(["BAGEL", "LETTUCE", "EMPTY"])),
         userId: z.string(),
       })
     )
     .mutation(({ ctx, input }) => {
       return ctx.prisma.bagel.create({
         data: {
-          id: "1",
+          id: uuidv4(),
           createdAt: new Date(),
           updatedAt: new Date(),
-          name: "Bagel",
+          name: input.name,
           ingredients: input.ingredients,
           user: {
             connect: {

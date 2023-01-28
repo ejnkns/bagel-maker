@@ -2,6 +2,7 @@ import { IngredientType } from "@prisma/client";
 import { BagelSvg } from "../IngredientSvgs/BagelSvg";
 import { LettuceSvg } from "../IngredientSvgs/LettuceSvg";
 import type { SvgProps } from "../IngredientSvgs/types";
+import { Joiner } from "./types";
 
 type BagelComponentType = (
   | "EMPTY"
@@ -42,3 +43,16 @@ export const reorderBagel = ({
   const newBagel = order.map((index) => bagel[index] ?? IngredientType.EMPTY);
   return newBagel;
 };
+
+export const getBinLimits = ({
+  binPoint,
+  targetSize,
+}: {
+  binPoint: { x: number; y: number };
+  targetSize: number;
+}) => ({
+  maxY: binPoint.y + targetSize,
+  maxX: binPoint.x + targetSize,
+  minX: binPoint.x - targetSize / 2,
+  minY: binPoint.y - targetSize / 2,
+});

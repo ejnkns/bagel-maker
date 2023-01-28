@@ -1,9 +1,15 @@
+import { FormEvent } from "react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BagelListHOC } from "../Bagel";
 import { IngredientsHOC } from "../Ingredients";
 import useWindowDimensions from "./hooks";
 import type { Bagel } from "@prisma/client";
 import { IngredientType } from "@prisma/client";
+import { useSession } from "next-auth/react";
+import { api } from "../../utils/api";
+import { getBinLimits, reorderBagel } from "./helpers";
+import { Form } from "./SaveBagelForm";
+import { Bin } from "./Bin";
 
 type BagelMakerProps = {
   userBagel?: Bagel;
@@ -18,14 +24,15 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
 
   const isPortrait = height > width;
   const INGREDIENTS_CELL_SIZE = isPortrait
-    ? Math.round(width / 8)
-    : Math.round(height / 8);
-  const INGREDIENTS_COLS = 1;
-  const INGREDIENTS_ROWS = 7;
+    ? Math.round(width / 12)
+    : Math.round(height / 12);
+  const INGREDIENTS_COLS = 2;
+  const INGREDIENTS_ROWS = 3;
   const BAGEL_LIST_WIDTH = INGREDIENTS_CELL_SIZE * 1.5;
   const BAGEL_ELEMENT_HEIGHT = BAGEL_LIST_WIDTH;
-  const PADDING = isPortrait ? Math.round(width / 4) : Math.round(height / 4);
+  const PADDING = isPortrait ? Math.round(width / 8) : Math.round(height / 8);
   const DROP_PADDING = BAGEL_LIST_WIDTH / 2;
+  const BIN_WIDTH = BAGEL_LIST_WIDTH / 2;
 
   const [defaultBagel, setDefaultBagel] = useState<IngredientType[]>(
     userBagel?.ingredients
@@ -39,6 +46,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
 
   const bagelOrder = useRef(defaultBagel.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
   const elementSizeDiff = BAGEL_ELEMENT_HEIGHT - INGREDIENTS_CELL_SIZE;
+
   const getEmptyBagelPoints = useCallback(
     () =>
       defaultBagel.reduce((acc, item, index) => {
@@ -67,9 +75,21 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
     ]
   );
 
+  const getBinPoint = useCallback(
+    () => ({
+      x: PADDING + BIN_WIDTH / 2,
+      y: BAGEL_ELEMENT_HEIGHT * defaultBagel.length - (PADDING + BIN_WIDTH / 2),
+    }),
+    [BAGEL_ELEMENT_HEIGHT, BIN_WIDTH, PADDING, defaultBagel.length]
+  );
+  const [isOverBin, setIsOverBin] = useState(false);
+
   const [defaultIngredients, setDefaultIngredients] = useState<
     IngredientType[]
-  >(new Array(3).fill(IngredientType.LETTUCE));
+  >([
+    ...new Array(2).fill(IngredientType.BAGEL),
+    ...new Array(3).fill(IngredientType.LETTUCE),
+  ]);
   const ingredientsOrder = useRef(defaultIngredients.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
 
   const middleBagelX =
@@ -90,6 +110,27 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
     },
     [BAGEL_ELEMENT_HEIGHT, defaultBagel.length]
   );
+
+  const { data: sessionData } = useSession();
+  const mutation = api.example.putBagel.useMutation();
+  const [saved, setSaved] = useState(false);
+
+  const handleSave = (event: FormEvent<HTMLFormElement>) => {
+    if (!sessionData?.user || !event.currentTarget) return;
+    event.preventDefault();
+    // save bagel to prisma db for user
+    const ingredients = reorderBagel({
+      bagel: defaultBagel,
+      order: bagelOrder.current,
+    });
+
+    mutation.mutate({
+      name: event.currentTarget.nameInput.value,
+      ingredients,
+      userId: sessionData.user.id,
+    });
+    setSaved(true);
+  };
 
   return (
     <div
@@ -114,14 +155,14 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
           conditionFn: ({ itemX, itemY }) => {
             // could do things like limit to only 1 bagel top and 1 bagel bottom here
             if (itemX < minX || itemX > maxX || itemY < minY || itemY > maxY) {
-              // console.log(`not in bounds: "x: ${{itemX}}, y: ${{itemY}}"`)
+              // console.info(`not in bounds: "x: ${{itemX}}, y: ${{itemY}}"`)
               return false;
             }
 
             const index = getBagelIndex(itemY);
             const bagelIndex = bagelOrder.current[index];
-            const bagelItem = bagelIndex && defaultBagel[bagelIndex];
-
+            const bagelItem =
+              bagelIndex !== undefined && defaultBagel[bagelIndex];
             if (bagelItem !== IngredientType.EMPTY) {
               return false;
             }
@@ -135,8 +176,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
               // reordering the bagel according to the bagelOrder ref
               const newBagel = [...defaultBagelValue];
               const orderedIndex = bagelOrder.current[getBagelIndex(itemY)];
-              if (orderedIndex) newBagel[orderedIndex] = item;
-
+              if (orderedIndex !== undefined) newBagel[orderedIndex] = item;
               return newBagel;
             });
 
@@ -144,7 +184,6 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
             setDefaultIngredients((defaultIngredientsValue) => {
               const newIngredients = [...defaultIngredientsValue];
               newIngredients[itemIndex] = IngredientType.EMPTY;
-
               return newIngredients;
             });
           },
@@ -155,7 +194,49 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
         elementHeight={BAGEL_ELEMENT_HEIGHT}
         items={defaultBagel}
         bagelOrder={bagelOrder}
+        saved={saved}
+        getBinPoint={getBinPoint}
+        setIsOverBin={setIsOverBin}
+        targetSize={BIN_WIDTH}
+        joiner={{
+          conditionFn: ({ itemX, itemY }) => {
+            console.log(itemY);
+            const { x, y } = getBinPoint();
+            const { minX, minY, maxX, maxY } = getBinLimits({
+              binPoint: { x, y },
+              targetSize: BIN_WIDTH,
+            });
+
+            if (itemX < minX || itemY < minY) {
+              return false;
+            }
+
+            return true;
+          },
+          itemFn: ({ item, itemY, itemIndex }) => {
+            // replace it with "empty" in the defaultBagel state
+            console.log({ itemY });
+            console.log("running item fn");
+            console.log(itemIndex);
+            setDefaultBagel((defaultBagelValue) => {
+              console.log(defaultBagelValue);
+              // defaultBagelValue[itemIndex] = IngredientType.EMPTY;
+              const newBagel = [...defaultBagelValue];
+              newBagel[itemIndex] = IngredientType.EMPTY;
+              console.log(newBagel);
+              return newBagel;
+            });
+          },
+        }}
       />
+      <div
+        style={{
+          marginTop: "auto",
+        }}
+      >
+        <Bin width={BIN_WIDTH} isOver={isOverBin} />
+      </div>
+      <Form save={handleSave} />
     </div>
   );
 };

@@ -45,7 +45,7 @@ export const IngredientsHOC = (
             y: calcOffsetY(order.indexOf(index), cols, elementSize),
             scale: 1,
             zIndex: 0,
-            fill: "white",
+            fill: "grey",
             immediate: false,
           };
     };

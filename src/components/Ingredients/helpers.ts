@@ -55,5 +55,5 @@ export const calculateOffsetXYandFill = ({
 
   return positionXY
     ? { ...positionXY, fill: "green", scale: scale * 1.05 }
-    : { x: offsetX, y: offsetY, fill: "red", scale: scale * 1.3 };
+    : { x: offsetX, y: offsetY, fill: "white", scale: scale * 1.3 };
 };

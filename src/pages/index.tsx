@@ -5,15 +5,16 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 import { api } from "../utils/api";
 import { BagelMaker } from "../components/BagelMaker/BagelMaker";
+import { SavedBagel } from "../components/SavedBagel/SavedBagel";
 
 const Home: NextPage = () => {
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
+  // const hello = api.example.hello.useQuery({ text: "from tRPC" });
 
   const { data: sessionData } = useSession();
 
-  const { data: secretBagel } = api.example.getBagels.useQuery(
+  const { data: secretBagels } = api.example.getBagels.useQuery(
     undefined, // no input
-    { enabled: sessionData?.user !== undefined }
+    { enabled: !!sessionData?.user }
   );
 
   return (
@@ -24,13 +25,17 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className={styles.main}>
-        <div className={styles.overflow}>
-          <BagelMaker userBagel={secretBagel && secretBagel[0]} />
-        </div>
+        <BagelMaker />
         <div className={styles.showcaseContainer}>
-          <p className={styles.showcaseText}>
+          {/* <p className={styles.showcaseText}>
             {hello.data ? hello.data.greeting : "Loading tRPC query..."}
-          </p>
+          </p> */}
+          <div style={{ display: "flex", gap: "2em" }}>
+            {secretBagels &&
+              secretBagels.map((bagel) => (
+                <SavedBagel key={bagel.id} width={100} bagel={bagel} />
+              ))}
+          </div>
           <AuthShowcase />
         </div>
       </main>
