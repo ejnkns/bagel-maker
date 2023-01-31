@@ -31,7 +31,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   const INGREDIENTS_ROWS = 7;
   const BAGEL_LIST_WIDTH = INGREDIENTS_CELL_SIZE * 1.5;
   const BAGEL_ELEMENT_HEIGHT = BAGEL_LIST_WIDTH;
-  const PADDING = isPortrait ? Math.round(width / 8) : Math.round(height / 8);
+  const PADDING = isPortrait ? Math.round(width / 4) : Math.round(height / 4);
   const DROP_PADDING = BAGEL_LIST_WIDTH / 2;
   const BIN_WIDTH = BAGEL_LIST_WIDTH / 2;
 
@@ -79,7 +79,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   const getBinPoint = useCallback(
     () => ({
       x: PADDING + BIN_WIDTH / 2,
-      y: BAGEL_ELEMENT_HEIGHT * defaultBagel.length - (PADDING + BIN_WIDTH / 2),
+      y: BAGEL_ELEMENT_HEIGHT * (defaultBagel.length - 1),
     }),
     [BAGEL_ELEMENT_HEIGHT, BIN_WIDTH, PADDING, defaultBagel.length]
   );

@@ -41,18 +41,15 @@ export const BagelListHOC = (
     callback,
   }) => {
     return (index: number) => {
-      const itemY = order.indexOf(index) * elementHeight;
       const centerPointY = ((order.length - 1) * elementHeight) / 2;
-      const offsetY = curIndex ? curIndex * elementHeight + y : y;
+      const itemY = order.indexOf(index) * elementHeight;
       const ySaved = itemY + (centerPointY - itemY) / 2;
 
       const savedScale =
-        order.indexOf(index) === 0 || order.indexOf(index) === order.length - 1
-          ? 1
-          : 0.7;
-
+        curIndex === 0 || curIndex === order.length - 1 ? 1 : 0.7;
       const targetScale = targetSize / elementHeight;
 
+      const offsetY = curIndex ? curIndex * elementHeight + y : y;
       const isNearBin = x > minX && offsetY > minY;
 
       const targetLocation = { x: binX + targetSize, y: binY + targetSize };

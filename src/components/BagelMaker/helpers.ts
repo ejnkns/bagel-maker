@@ -51,7 +51,7 @@ export const getBinLimits = ({
   binPoint: { x: number; y: number };
   targetSize: number;
 }) => ({
-  maxY: binPoint.y + targetSize,
+  maxY: binPoint.y + targetSize / 2,
   maxX: binPoint.x + targetSize,
   minX: binPoint.x - targetSize / 2,
   minY: binPoint.y - targetSize / 2,
