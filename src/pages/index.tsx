@@ -30,13 +30,13 @@ const Home: NextPage = () => {
           {/* <p className={styles.showcaseText}>
             {hello.data ? hello.data.greeting : "Loading tRPC query..."}
           </p> */}
+          <AuthShowcase />
           <div style={{ display: "flex", gap: "2em" }}>
             {secretBagels &&
               secretBagels.map((bagel) => (
                 <SavedBagel key={bagel.id} width={100} bagel={bagel} />
               ))}
           </div>
-          <AuthShowcase />
         </div>
       </main>
     </>

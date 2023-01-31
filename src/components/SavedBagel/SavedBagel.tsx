@@ -22,6 +22,9 @@ export const SavedBagel = ({
       <div
         style={{
           width,
+          // Below assumes width is the same as height
+          // and it adds ingredients.length to account for extra 1px between svgs
+          height: ((ingredients.length + 1) * width) / 2 + ingredients.length,
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -30,9 +33,6 @@ export const SavedBagel = ({
         {bagelWithNoEmptyIngredients.map((ingredient, index) => {
           if (ingredient !== IngredientType.EMPTY) {
             const Ingredient = bagelStringToComponentMap[ingredient];
-            // const y = index === bagelWithNoEmptyIngredients.length -1 ? 0 : index * width / bagelWithNoEmptyIngredients.length
-            const y = 0;
-            // 0, 25,
             return (
               <div
                 style={{ height: width / 2 }}
@@ -42,7 +42,6 @@ export const SavedBagel = ({
                   style={{
                     height: width,
                     position: "relative",
-                    bottom: `${y}px`,
                   }}
                 />
               </div>

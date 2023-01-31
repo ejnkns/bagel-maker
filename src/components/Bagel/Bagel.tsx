@@ -1,6 +1,6 @@
-import React, { Dispatch, MutableRefObject, ReactNode, useState } from "react";
-import { UseSpringsProps, useTransition } from "@react-spring/web";
-import { useSprings, animated } from "@react-spring/web";
+import type { Dispatch, MutableRefObject } from "react";
+import React, { useState } from "react";
+import { useSprings, animated, useSpringValue } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 import { clamp, move } from "../dndHelpers";
 import styles from "./Bagel.module.css";
@@ -8,28 +8,6 @@ import { IngredientType } from "@prisma/client";
 import { bagelStringToComponentMap } from "../BagelMaker/helpers";
 import type { Joiner } from "../BagelMaker/types";
 import type { BagelSpringFn } from "./BagelHOC";
-
-// component that will wrap a bagel ingredient
-// and uses usetransition to animate each ingredient
-const Transition = ({
-  items,
-  originalIndex,
-  deleteIndex,
-}: {
-  items: ReactNode;
-  originalIndex: number;
-  deleteIndex?: number;
-}) => {
-  const transitions = useTransition(items, {
-    from: { opacity: 0 },
-    enter: { opacity: 1 },
-    leave: { opacity: 1 },
-  });
-
-  return transitions((style, item) => (
-    <animated.div style={style}>{item}</animated.div>
-  ));
-};
 
 // This component is a modified version of this: https://codesandbox.io/s/github/pmndrs/use-gesture/tree/main/demo/src/sandboxes/draggable-list
 // from use-gesture examples: https://use-gesture.netlify.app/docs/examples/
@@ -54,11 +32,15 @@ export const BagelList = ({
   springFn,
   joiner,
 }: BagelListProps) => {
-  const [deleted, setDeleted] = useState<number>();
+  const [deletedOriginalIndex, setDeleted] = useState<number>();
   // Create springs, each corresponds to an item, controlling its transform, scale, etc.
   const [springs, springApi] = useSprings(
     items.length,
-    springFn({ order: bagelOrder.current }),
+    springFn({
+      order: bagelOrder.current,
+      state: deletedOriginalIndex !== undefined ? "deleted" : "default",
+      deletedOriginalIndex,
+    }),
     [bagelOrder.current]
   );
 
@@ -79,7 +61,7 @@ export const BagelList = ({
 
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
-      if (saved) return;
+      if (saved || deletedOriginalIndex !== undefined) return;
       const curIndex = bagelOrder.current.indexOf(originalIndex);
       const tempRow = Math.round(
         (curIndex * elementHeight + y) / elementHeight
@@ -88,7 +70,15 @@ export const BagelList = ({
       const newOrder = move(bagelOrder.current, curIndex, curRow);
 
       springApi.start(
-        springFn({ order: newOrder, active, originalIndex, curIndex, x, y })
+        springFn({
+          order: newOrder,
+          state: deletedOriginalIndex ? "saved" : "default",
+          active,
+          originalIndex,
+          curIndex,
+          x,
+          y,
+        })
       ); // Feed springs new style data, they'll animate the view without causing a single render
 
       const item = items[originalIndex];
@@ -114,10 +104,6 @@ export const BagelList = ({
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
       const curIndex = bagelOrder.current.indexOf(originalIndex);
       const item = items[originalIndex];
-      console.log("ondrag end", {
-        joiner,
-        item,
-      });
       if (
         item &&
         item !== IngredientType.EMPTY &&
@@ -130,8 +116,14 @@ export const BagelList = ({
             itemY: y + curIndex * elementHeight,
           }))
       ) {
-        console.log("condition met");
         setDeleted(originalIndex);
+        const callback = () =>
+          joiner?.itemFn({
+            item,
+            itemIndex: originalIndex,
+            itemX: x,
+            itemY: y + curIndex * elementHeight,
+          });
         springApi.start(
           springFn({
             order: bagelOrder.current,
@@ -139,17 +131,12 @@ export const BagelList = ({
             active: true,
             originalIndex,
             curIndex,
+            deletedOriginalIndex: originalIndex,
             x,
             y,
+            callback,
           })
         );
-        // run the joiner item function
-        joiner?.itemFn({
-          item,
-          itemIndex: originalIndex,
-          itemX: x,
-          itemY: y + curIndex * elementHeight,
-        });
       }
       setIsOverBin(false);
     },
@@ -161,57 +148,48 @@ export const BagelList = ({
         className={styles.bagel}
         style={{ height: items.length * elementHeight, width }}
       >
-        {springs.map(({ zIndex, x, y, scale, fill, opacity }, i) => {
+        {springs.map(({ fill, ...style }, i) => {
           const item = items[i] as IngredientType | undefined;
           // is it much less performant to have two animted divs nested here than one?
           // could move all animation to the svg component
           const ItemComponent = item && bagelStringToComponentMap[item];
-          const AnimatedSvgComponent = ItemComponent !== IngredientType.EMPTY &&
-            ItemComponent && animated(ItemComponent);
-        return !item || item === IngredientType.EMPTY ? 
-        <Transition deleteIndex={deleted}
-          originalIndex={i}
-          items={<div key={i}> 
-              <animated.div
-                  {...bind(i)}
-                  style={{
-                    opacity,
-                    zIndex,
-                    y,
-                    scale,
-                    fill,
-                    userSelect: "none",
-                    height: elementHeight,
-                    width: elementHeight,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <span className={styles.empty}>+</span>
-                </animated.div>
-              </div>
-              }/> : <Transition deleteIndex={deleted}
-                originalIndex={i}
-                items={<div key={i}> 
-                <animated.div
-                  {...bind(i)}
-                  style={{
-                    zIndex,
-                    x,
-                    y,
-                    scale,
-                    height: elementHeight,
-                    width: elementHeight,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {AnimatedSvgComponent && <AnimatedSvgComponent fill={fill} /> }
-                </animated.div>
-                </div>
-                }/>
+          const AnimatedSvgComponent =
+            ItemComponent !== IngredientType.EMPTY &&
+            ItemComponent &&
+            animated(ItemComponent);
+          return !item || item === IngredientType.EMPTY ? (
+            <animated.div
+              {...bind(i)}
+              key={i}
+              style={{
+                ...style,
+                fill,
+                userSelect: "none",
+                height: elementHeight,
+                width: elementHeight,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <span className={styles.empty}>+</span>
+            </animated.div>
+          ) : (
+            <animated.div
+              {...bind(i)}
+              key={i}
+              style={{
+                ...style,
+                height: elementHeight,
+                width: elementHeight,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {AnimatedSvgComponent && <AnimatedSvgComponent fill={fill} />}
+            </animated.div>
+          );
         })}
       </div>
     </>

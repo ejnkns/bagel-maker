@@ -6,12 +6,14 @@ import { type BagelListProps, BagelList } from "./Bagel";
 
 export type BagelSpringFn = (props: {
   order: number[];
-  state?: "edit" | "saved" | "deleted";
+  state?: "default" | "saved" | "deleted";
   active?: boolean;
   originalIndex?: number;
   curIndex?: number;
+  deletedOriginalIndex?: number;
   x?: number;
   y?: number;
+  callback?: () => void;
 }) => (index: number) => UseSpringsProps;
 
 export const BagelListHOC = (
@@ -25,21 +27,23 @@ export const BagelListHOC = (
   const { x: binX, y: binY } = getBinPoint();
   const { minX, minY, maxX, maxY } = useMemo(() => {
     return getBinLimits({ binPoint: { x: binX, y: binY }, targetSize });
-  }, [getBinPoint, targetSize]);
+  }, [binX, binY, targetSize]);
 
   const springFn: BagelSpringFn = ({
     order,
-    state = "edit",
+    state = "default",
     active = false,
-    originalIndex = 0,
-    curIndex = 0,
+    originalIndex,
+    curIndex,
+    deletedOriginalIndex,
     x = 0,
     y = 0,
+    callback,
   }) => {
     return (index: number) => {
       const itemY = order.indexOf(index) * elementHeight;
       const centerPointY = ((order.length - 1) * elementHeight) / 2;
-      const offsetY = curIndex * elementHeight + y;
+      const offsetY = curIndex ? curIndex * elementHeight + y : y;
       const ySaved = itemY + (centerPointY - itemY) / 2;
 
       const savedScale =
@@ -51,8 +55,8 @@ export const BagelListHOC = (
 
       const isNearBin = x > minX && offsetY > minY;
 
-      console.log("order length", order.length);
-      console.log({ index, curIndex, originalIndex });
+      const targetLocation = { x: binX + targetSize, y: binY + targetSize };
+
       return state === "saved"
         ? {
             y: ySaved,
@@ -62,14 +66,15 @@ export const BagelListHOC = (
             fill: order.indexOf(index) % 2 === 0 ? "purple" : "blue",
             immediate: false,
           }
-        : state === "deleted" && active && index === originalIndex
+        : state === "deleted" && index === deletedOriginalIndex
         ? {
-            x: binX + targetSize,
-            y: binY + targetSize,
+            x: targetLocation.x,
+            y: targetLocation.y,
             scale: 0,
             zIndex: 0,
             opacity: 0,
             immediate: false,
+            onRest: callback,
           }
         : active && index === originalIndex
         ? {

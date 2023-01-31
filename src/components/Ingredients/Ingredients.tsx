@@ -55,7 +55,6 @@ export const Ingredients = ({
           itemX: calcOffsetX(curIndex, cols, elementSize, x),
           itemY: calcOffsetY(curIndex, cols, elementSize, y),
         });
-        // api.stop();
       }
     },
   });
