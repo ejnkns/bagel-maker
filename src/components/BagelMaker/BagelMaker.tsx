@@ -25,8 +25,8 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
 
   const isPortrait = height > width;
   const INGREDIENTS_CELL_SIZE = isPortrait
-    ? Math.round(width / 12)
-    : Math.round(height / 12);
+    ? Math.round(width / 10)
+    : Math.round(height / 10);
   const INGREDIENTS_COLS = 2;
   const INGREDIENTS_ROWS = 7;
   const BAGEL_LIST_WIDTH = INGREDIENTS_CELL_SIZE * 1.5;
