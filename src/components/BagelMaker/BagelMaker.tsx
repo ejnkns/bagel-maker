@@ -154,18 +154,20 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
           joiner={{
             conditionFn: ({ itemX, itemY }) => {
               // could do things like limit to only 1 bagel top and 1 bagel bottom here
+              console.log("conditionFn");
               if (
                 itemX < minX ||
                 itemX > maxX ||
                 itemY < minY ||
                 itemY > maxY
               ) {
-                // console.info(`not in bounds: "x: ${{itemX}}, y: ${{itemY}}"`)
+                console.info(
+                  `not in bounds: "x: ${{ itemX }}, y: ${{ itemY }}"`
+                );
                 return false;
               }
 
-              const index = getBagelIndex(itemY);
-              const bagelIndex = bagelOrder.current[index];
+              const bagelIndex = bagelOrder.current[getBagelIndex(itemY)];
               const bagelItem =
                 bagelIndex !== undefined && defaultBagel[bagelIndex];
               if (bagelItem !== IngredientType.EMPTY) {
@@ -175,6 +177,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
               return true;
             },
             itemFn: ({ item, itemY, itemIndex }) => {
+              console.log("itemFn");
               // add it to the defaultBagel state which will cause a render
               // and update the refs
               setDefaultBagel((defaultBagelValue) => {

@@ -32,6 +32,7 @@ export const calculateOffsetXYandFill = ({
   index,
   gravityPoints,
   targetSize,
+  useDefaults,
 }: {
   x: number;
   y: number;
@@ -40,10 +41,9 @@ export const calculateOffsetXYandFill = ({
   index: number;
   gravityPoints: { x: number; y: number }[];
   targetSize: number;
+  useDefaults?: boolean;
 }) => {
   const gravityLimit = targetSize / 2;
-  const scale = targetSize / elementSize;
-
   const offsetY = calcOffsetY(index, cols, elementSize, y);
   const offsetX = calcOffsetX(index, cols, elementSize, x);
 
@@ -53,7 +53,16 @@ export const calculateOffsetXYandFill = ({
       Math.abs(gravityPoint.x - offsetX) < gravityLimit
   );
 
+  const fillToUse = useDefaults ? "white " : positionXY ? "green" : "white";
+
+  const baseScale = targetSize / elementSize;
+  const scaleToUse = useDefaults
+    ? baseScale
+    : positionXY
+    ? baseScale * 1.05
+    : baseScale * 1.3;
+
   return positionXY
-    ? { ...positionXY, fill: "green", scale: scale * 1.05 }
-    : { x: offsetX, y: offsetY, fill: "white", scale: scale * 1.3 };
+    ? { ...positionXY, fill: fillToUse, scale: scaleToUse }
+    : { x: offsetX, y: offsetY, fill: fillToUse, scale: scaleToUse };
 };

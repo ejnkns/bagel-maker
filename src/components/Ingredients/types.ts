@@ -6,15 +6,19 @@ export type IngredientsProps = {
   items: IngredientType[];
   rows: number;
   cols: number;
-  springFn: (
-    order: number[],
-    active?: boolean,
-    originalIndex?: number,
-    curIndex?: number,
-    x?: number,
-    y?: number
-  ) => (index: number) => UseSpringsProps;
   ingredientsOrder: React.MutableRefObject<number[]>;
   elementSize: number;
   joiner?: Joiner;
+  springFn: IngredientsSpringFn;
 };
+
+export type IngredientsSpringFn = (props: {
+  order: number[];
+  active?: boolean;
+  originalIndex?: number;
+  curIndex?: number;
+  x?: number;
+  y?: number;
+  callback?: () => void;
+  deletedOriginalIndex?: number;
+}) => (index: number) => UseSpringsProps;

@@ -1,7 +1,7 @@
 import { config } from "@react-spring/web";
 import { Ingredients } from "./Ingredients";
 import { calcOffsetX, calcOffsetY, calculateOffsetXYandFill } from "./helpers";
-import type { IngredientsProps } from "./types";
+import type { IngredientsProps, IngredientsSpringFn } from "./types";
 
 export const IngredientsHOC = (
   props: Omit<IngredientsProps, "springFn"> & {
@@ -10,9 +10,9 @@ export const IngredientsHOC = (
   }
 ) => {
   const { cols, elementSize, getEmptyBagelPoints, targetSize } = props;
-  const springFn =
-    (
-      order: number[],
+  const springFn: IngredientsSpringFn =
+    ({
+      order,
       active = false,
       // the original index input to the component
       originalIndex = 0,
@@ -20,10 +20,20 @@ export const IngredientsHOC = (
       // i.e index of originalIndex in order.current when dragging began
       curIndex = 0,
       x = 0,
-      y = 0
-    ) =>
+      y = 0,
+      callback,
+    }) =>
     // the original index of the element being calculated
     (index: number) => {
+      const emptyBagelPoints = getEmptyBagelPoints();
+      console.log(emptyBagelPoints);
+      console.log({
+        index,
+        originalIndex,
+        curIndex,
+        orderIndex: order.indexOf(index),
+      });
+
       return active && index === originalIndex
         ? {
             zIndex: 1,
@@ -36,9 +46,11 @@ export const IngredientsHOC = (
               index: curIndex,
               cols,
               elementSize,
-              gravityPoints: getEmptyBagelPoints(),
+              gravityPoints: emptyBagelPoints,
               targetSize,
+              useDefaults: callback ? true : undefined,
             }),
+            onRest: callback,
           }
         : {
             x: calcOffsetX(order.indexOf(index), cols, elementSize),

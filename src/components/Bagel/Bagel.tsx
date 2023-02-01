@@ -1,6 +1,6 @@
 import type { Dispatch, MutableRefObject } from "react";
 import React, { useState } from "react";
-import { useSprings, animated, useSpringValue } from "@react-spring/web";
+import { useSprings, animated } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 import { clamp, move } from "../dndHelpers";
 import styles from "./Bagel.module.css";

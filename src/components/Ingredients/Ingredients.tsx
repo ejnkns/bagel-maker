@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useSprings, animated } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 import { calcOffsetX, calcOffsetY } from "./helpers";
@@ -18,9 +18,10 @@ export const Ingredients = ({
   elementSize,
   joiner,
 }: IngredientsProps) => {
+  const [deletedOriginalIndex, setDeleted] = useState<number>();
   const [springs, springApi] = useSprings(
     items.length,
-    springFn(order.current)
+    springFn({ order: order.current })
   );
 
   const bind = useGesture({
@@ -29,12 +30,38 @@ export const Ingredients = ({
 
       // Feed springs new style data, they'll animate the view without causing a single render
       springApi.start(
-        springFn(order.current, active, originalIndex, curIndex, x, y)
+        springFn({
+          order: order.current,
+          active,
+          originalIndex,
+          curIndex,
+          x,
+          y,
+        })
       );
     },
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
       const curIndex = order.current.indexOf(originalIndex);
+      console.log({
+        curIndex,
+        originalIndex,
+      });
       const item = items[curIndex];
+      console.log("dragEnd");
+      console.log({
+        item,
+        joiner,
+        conditionFnResult:
+          item &&
+          joiner &&
+          joiner.conditionFn &&
+          joiner?.conditionFn({
+            item,
+            itemIndex: curIndex,
+            itemX: calcOffsetX(curIndex, cols, elementSize, x),
+            itemY: calcOffsetY(curIndex, cols, elementSize, y),
+          }),
+      });
       if (
         item &&
         item !== IngredientType.EMPTY &&
@@ -47,14 +74,28 @@ export const Ingredients = ({
             itemY: calcOffsetY(curIndex, cols, elementSize, y),
           }))
       ) {
-        // run the joiner item function
-        joiner?.itemFn({
-          item,
-          itemIndex: curIndex,
-          // X and Y are relative to the top right of the ingredient grid
-          itemX: calcOffsetX(curIndex, cols, elementSize, x),
-          itemY: calcOffsetY(curIndex, cols, elementSize, y),
-        });
+        console.log("condition met");
+        setDeleted(originalIndex);
+        const callback = () =>
+          joiner?.itemFn({
+            item,
+            itemIndex: originalIndex,
+            // X and Y are relative to the top right of the ingredient grid
+            itemX: calcOffsetX(curIndex, cols, elementSize, x),
+            itemY: calcOffsetY(curIndex, cols, elementSize, y),
+          });
+        springApi.start(
+          springFn({
+            order: order.current,
+            active: true,
+            originalIndex,
+            curIndex,
+            x,
+            y,
+            callback,
+            deletedOriginalIndex: originalIndex,
+          })
+        );
       }
     },
   });
