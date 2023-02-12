@@ -2,7 +2,6 @@ import { IngredientType } from "@prisma/client";
 import { BagelSvg } from "../IngredientSvgs/BagelSvg";
 import { LettuceSvg } from "../IngredientSvgs/LettuceSvg";
 import type { SvgProps } from "../IngredientSvgs/types";
-import { Joiner } from "./types";
 
 type BagelComponentType = (
   | "EMPTY"

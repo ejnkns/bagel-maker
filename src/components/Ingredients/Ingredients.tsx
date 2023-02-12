@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSprings, animated } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
 import { calcOffsetX, calcOffsetY } from "./helpers";
@@ -6,6 +6,7 @@ import type { IngredientsProps } from "./types";
 import styles from "./Ingredients.module.css";
 import { bagelStringToComponentMap } from "../BagelMaker/helpers";
 import { IngredientType } from "@prisma/client";
+import { clamp, move } from "../dndHelpers";
 
 const GRID_COLOR = "white";
 
@@ -14,54 +15,59 @@ export const Ingredients = ({
   rows,
   cols,
   springFn,
-  ingredientsOrder: order,
+  orderRef,
   elementSize,
   joiner,
 }: IngredientsProps) => {
   const [deletedOriginalIndex, setDeleted] = useState<number>();
+
+  // check if there are any EMPTY items not at the end of the order
+  // if so, move them to the end
+  // useEffect(() => {
+  //   const order = orderRef.current;
+  //   const emptyIndex = order.indexOf(
+  //     items.findIndex((item) => item === IngredientType.EMPTY)
+  //   );
+  //   console.log({ emptyIndex });
+  //   if (emptyIndex !== -1 && emptyIndex !== order.length - 1) {
+  //     const newOrder = move(order, emptyIndex, order.length - 1);
+  //     orderRef.current = newOrder;
+  //   }
+  // }, [items, orderRef]);
+
   const [springs, springApi] = useSprings(
     items.length,
-    springFn({ order: order.current })
+    springFn({
+      order: orderRef.current,
+      state: deletedOriginalIndex !== undefined ? "deleted" : "render",
+      deletedOriginalIndex,
+    }),
+    [orderRef.current]
   );
 
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
-      const curIndex = order.current.indexOf(originalIndex);
-
-      // Feed springs new style data, they'll animate the view without causing a single render
+      const order = orderRef.current;
+      if (deletedOriginalIndex !== undefined) return;
+      const curIndex = order.indexOf(originalIndex);
       springApi.start(
         springFn({
-          order: order.current,
+          order,
+          state: "default",
           active,
           originalIndex,
-          curIndex,
           x,
           y,
+          deletedOriginalIndex,
         })
       );
     },
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
-      const curIndex = order.current.indexOf(originalIndex);
-      console.log({
-        curIndex,
-        originalIndex,
-      });
+      const order = orderRef.current;
+      const curIndex = order.indexOf(originalIndex);
+
       const item = items[curIndex];
-      console.log("dragEnd");
-      console.log({
-        item,
-        joiner,
-        conditionFnResult:
-          item &&
-          joiner &&
-          joiner.conditionFn &&
-          joiner?.conditionFn({
-            item,
-            itemIndex: curIndex,
-            itemX: calcOffsetX(curIndex, cols, elementSize, x),
-            itemY: calcOffsetY(curIndex, cols, elementSize, y),
-          }),
-      });
+
       if (
         item &&
         item !== IngredientType.EMPTY &&
@@ -74,7 +80,6 @@ export const Ingredients = ({
             itemY: calcOffsetY(curIndex, cols, elementSize, y),
           }))
       ) {
-        console.log("condition met");
         setDeleted(originalIndex);
         const callback = () =>
           joiner?.itemFn({
@@ -86,10 +91,9 @@ export const Ingredients = ({
           });
         springApi.start(
           springFn({
-            order: order.current,
-            active: true,
+            order,
+            state: "deleted",
             originalIndex,
-            curIndex,
             x,
             y,
             callback,

@@ -1,4 +1,4 @@
-import type { Dispatch, MutableRefObject } from "react";
+import type { MutableRefObject } from "react";
 import React, { useState } from "react";
 import { useSprings, animated } from "@react-spring/web";
 import { useGesture } from "@use-gesture/react";
@@ -13,43 +13,43 @@ import type { BagelSpringFn } from "./BagelHOC";
 // from use-gesture examples: https://use-gesture.netlify.app/docs/examples/
 export type BagelListProps = {
   items: IngredientType[];
-  bagelOrder: MutableRefObject<number[]>;
+  order: MutableRefObject<number[]>;
   width: number;
   elementHeight: number;
   saved: boolean;
-  setIsOverBin: Dispatch<React.SetStateAction<boolean>>;
   springFn: BagelSpringFn;
   joiner?: Joiner;
+  isOverBin: boolean;
 };
 
 export const BagelList = ({
   items,
-  bagelOrder,
-  setIsOverBin,
+  order,
   width,
   elementHeight,
   saved,
   springFn,
   joiner,
+  isOverBin,
 }: BagelListProps) => {
   const [deletedOriginalIndex, setDeleted] = useState<number>();
   // Create springs, each corresponds to an item, controlling its transform, scale, etc.
   const [springs, springApi] = useSprings(
     items.length,
     springFn({
-      order: bagelOrder.current,
-      state: deletedOriginalIndex !== undefined ? "deleted" : "default",
+      order: order.current,
+      state: deletedOriginalIndex !== undefined ? "deleted" : "render",
       deletedOriginalIndex,
     }),
-    [bagelOrder.current]
+    [order.current]
   );
 
   if (saved) {
     // start spring for each item in the bagel that moves them towards its center point
-    bagelOrder.current.forEach((item, index) => {
+    order.current.forEach((item, index) => {
       springApi.start(
         springFn({
-          order: bagelOrder.current,
+          order: order.current,
           state: "saved",
           active: true,
           originalIndex: item,
@@ -62,17 +62,18 @@ export const BagelList = ({
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
       if (saved || deletedOriginalIndex !== undefined) return;
-      const curIndex = bagelOrder.current.indexOf(originalIndex);
+
+      const curIndex = order.current.indexOf(originalIndex);
       const tempRow = Math.round(
         (curIndex * elementHeight + y) / elementHeight
       );
       const curRow = clamp(tempRow, 0, items.length - 1);
-      const newOrder = move(bagelOrder.current, curIndex, curRow);
+      const newOrder = move(order.current, curIndex, curRow);
 
       springApi.start(
         springFn({
           order: newOrder,
-          state: deletedOriginalIndex ? "saved" : "default",
+          state: "default",
           active,
           originalIndex,
           curIndex,
@@ -81,52 +82,24 @@ export const BagelList = ({
         })
       ); // Feed springs new style data, they'll animate the view without causing a single render
 
-      const item = items[originalIndex];
-      if (
-        item &&
-        item !== IngredientType.EMPTY &&
-        joiner &&
-        (!joiner.conditionFn ||
-          joiner.conditionFn({
-            item,
-            itemIndex: curIndex,
-            itemX: x,
-            itemY: y + curIndex * elementHeight,
-          }))
-      ) {
-        setIsOverBin(true);
-      } else {
-        setIsOverBin(false);
-      }
-
-      if (!active) bagelOrder.current = newOrder;
+      if (!active) order.current = newOrder;
     },
-    onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
-      const curIndex = bagelOrder.current.indexOf(originalIndex);
-      const item = items[originalIndex];
-      if (
-        item &&
-        item !== IngredientType.EMPTY &&
-        joiner &&
-        (!joiner.conditionFn ||
-          joiner.conditionFn({
-            item,
-            itemIndex: curIndex,
-            itemX: x,
-            itemY: y + curIndex * elementHeight,
-          }))
-      ) {
+    onDragEnd: ({ args: [originalIndex], movement: [x, y], ...props }) => {
+      const curIndex = order.current.indexOf(originalIndex);
+      const item = items[curIndex];
+      const elem = document.elementFromPoint(props.xy[0], props.xy[1]);
+      console.info("DROPPED ON ELEM: ", elem);
+
+      if (isOverBin && item) {
         setDeleted(originalIndex);
         const callback = () =>
           joiner?.itemFn({
             item,
             itemIndex: originalIndex,
-            itemX: x,
-            itemY: y + curIndex * elementHeight,
           });
         springApi.start(
           springFn({
-            order: bagelOrder.current,
+            order: order.current,
             state: "deleted",
             active: true,
             originalIndex,
@@ -138,7 +111,6 @@ export const BagelList = ({
           })
         );
       }
-      setIsOverBin(false);
     },
   });
 
@@ -157,9 +129,10 @@ export const BagelList = ({
             ItemComponent !== IngredientType.EMPTY &&
             ItemComponent &&
             animated(ItemComponent);
+
           return !item || item === IngredientType.EMPTY ? (
             <animated.div
-              {...bind(i)}
+              {...bind(deletedOriginalIndex || i)}
               key={i}
               style={{
                 ...style,
@@ -176,7 +149,7 @@ export const BagelList = ({
             </animated.div>
           ) : (
             <animated.div
-              {...bind(i)}
+              {...bind(deletedOriginalIndex || i)}
               key={i}
               style={{
                 ...style,

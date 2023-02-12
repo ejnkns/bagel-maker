@@ -10,57 +10,54 @@ export const IngredientsHOC = (
   }
 ) => {
   const { cols, elementSize, getEmptyBagelPoints, targetSize } = props;
-  const springFn: IngredientsSpringFn =
-    ({
-      order,
-      active = false,
-      // the original index input to the component
-      originalIndex = 0,
-      // the from index of the element being dragged
-      // i.e index of originalIndex in order.current when dragging began
-      curIndex = 0,
-      x = 0,
-      y = 0,
-      callback,
-    }) =>
-    // the original index of the element being calculated
-    (index: number) => {
+  const springFn: IngredientsSpringFn = ({
+    order,
+    state = "default",
+    active = false,
+    // the original index input to the component
+    originalIndex,
+    // i.e index of originalIndex in order.current when dragging began
+    // These indexes will be the same when the items don't auto reorder
+    x = 0,
+    y = 0,
+    callback,
+    deletedOriginalIndex,
+  }) => {
+    return (index: number) => {
       const emptyBagelPoints = getEmptyBagelPoints();
-      console.log(emptyBagelPoints);
-      console.log({
-        index,
-        originalIndex,
-        curIndex,
-        orderIndex: order.indexOf(index),
-      });
+      if (index === originalIndex && (active || state === "deleted")) {
+        return {
+          zIndex: 1,
+          immediate: (key: string) => key === "zIndex",
+          config: () =>
+            deletedOriginalIndex
+              ? { friction: 0, clamp: true }
+              : config.default,
+          ...calculateOffsetXYandFill({
+            x,
+            y,
+            index: order.indexOf(originalIndex),
+            cols,
+            elementSize,
+            gravityPoints: emptyBagelPoints,
+            targetSize,
+            useDefaults: callback ? true : undefined,
+          }),
+          onRest: callback,
+        };
+      }
 
-      return active && index === originalIndex
-        ? {
-            zIndex: 1,
-            immediate: (key: string) => key === "zIndex",
-            config: (key: string) =>
-              key === "y" ? config.stiff : config.default,
-            ...calculateOffsetXYandFill({
-              x,
-              y,
-              index: curIndex,
-              cols,
-              elementSize,
-              gravityPoints: emptyBagelPoints,
-              targetSize,
-              useDefaults: callback ? true : undefined,
-            }),
-            onRest: callback,
-          }
-        : {
-            x: calcOffsetX(order.indexOf(index), cols, elementSize),
-            y: calcOffsetY(order.indexOf(index), cols, elementSize),
-            scale: 1,
-            zIndex: 0,
-            fill: "grey",
-            immediate: false,
-          };
+      return {
+        x: calcOffsetX(order.indexOf(index), cols, elementSize),
+        y: calcOffsetY(order.indexOf(index), cols, elementSize),
+        scale: 1,
+        zIndex: 0,
+        fill: "grey",
+        immediate: false,
+        onRest: callback,
+      };
     };
+  };
 
   return <Ingredients {...props} springFn={springFn} />;
 };

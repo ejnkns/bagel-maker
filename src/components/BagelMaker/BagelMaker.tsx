@@ -2,7 +2,7 @@ import type { FormEvent } from "react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { BagelListHOC } from "../Bagel";
 import { IngredientsHOC } from "../Ingredients";
-import useWindowDimensions from "./hooks";
+import { useSizes } from "./hooks";
 import type { Bagel } from "@prisma/client";
 import { IngredientType } from "@prisma/client";
 import { useSession } from "next-auth/react";
@@ -18,23 +18,6 @@ type BagelMakerProps = {
 
 // component with state for, screensize, bagel and its ingredients to pass to IngredientsHOC, BagelListHOC, and SaveBagel
 export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
-  console.count("rerender");
-
-  // widths and heights of the BagelList and IngredientsHOC components and elements
-  const { width, height } = useWindowDimensions();
-
-  const isPortrait = height > width;
-  const INGREDIENTS_CELL_SIZE = isPortrait
-    ? Math.round(width / 10)
-    : Math.round(height / 10);
-  const INGREDIENTS_COLS = 2;
-  const INGREDIENTS_ROWS = 7;
-  const BAGEL_LIST_WIDTH = INGREDIENTS_CELL_SIZE * 1.5;
-  const BAGEL_ELEMENT_HEIGHT = BAGEL_LIST_WIDTH;
-  const PADDING = isPortrait ? Math.round(width / 4) : Math.round(height / 4);
-  const DROP_PADDING = BAGEL_LIST_WIDTH / 2;
-  const BIN_WIDTH = BAGEL_LIST_WIDTH / 2;
-
   const [defaultBagel, setDefaultBagel] = useState<IngredientType[]>(
     userBagel?.ingredients
       ? userBagel.ingredients
@@ -46,8 +29,20 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   }, [userBagel]);
 
   const bagelOrder = useRef(defaultBagel.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
-  const elementSizeDiff = BAGEL_ELEMENT_HEIGHT - INGREDIENTS_CELL_SIZE;
 
+  const {
+    INGREDIENTS_CELL_SIZE,
+    INGREDIENTS_COLS,
+    INGREDIENTS_ROWS,
+    BAGEL_LIST_WIDTH,
+    BAGEL_ELEMENT_HEIGHT,
+    PADDING,
+    DROP_PADDING,
+    BIN_WIDTH,
+    loading,
+  } = useSizes();
+
+  const elementSizeDiff = BAGEL_ELEMENT_HEIGHT - INGREDIENTS_CELL_SIZE;
   const getEmptyBagelPoints = useCallback(
     () =>
       defaultBagel.reduce((acc, item, index) => {
@@ -70,6 +65,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
     [
       BAGEL_ELEMENT_HEIGHT,
       INGREDIENTS_CELL_SIZE,
+      INGREDIENTS_COLS,
       PADDING,
       defaultBagel,
       elementSizeDiff,
@@ -90,6 +86,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   >([
     ...new Array(4).fill(IngredientType.BAGEL),
     ...new Array(8).fill(IngredientType.LETTUCE),
+    ...new Array(2).fill(IngredientType.EMPTY),
   ]);
   const ingredientsOrder = useRef(defaultIngredients.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
 
@@ -136,7 +133,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   return (
     <>
       <div
-        key={`${width}x${height}-${defaultBagel.join("-")}`}
+        key={`${loading}-${defaultBagel.join("-")}`}
         className={styles.row}
         style={{
           gap: PADDING,
@@ -147,29 +144,20 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
           items={defaultIngredients}
           rows={INGREDIENTS_ROWS}
           cols={INGREDIENTS_COLS}
-          ingredientsOrder={ingredientsOrder}
+          orderRef={ingredientsOrder}
           elementSize={INGREDIENTS_CELL_SIZE}
           targetSize={BAGEL_ELEMENT_HEIGHT}
           getEmptyBagelPoints={getEmptyBagelPoints}
           joiner={{
             conditionFn: ({ itemX, itemY }) => {
-              // could do things like limit to only 1 bagel top and 1 bagel bottom here
-              console.log("conditionFn");
-              if (
-                itemX < minX ||
-                itemX > maxX ||
-                itemY < minY ||
-                itemY > maxY
-              ) {
-                console.info(
-                  `not in bounds: "x: ${{ itemX }}, y: ${{ itemY }}"`
-                );
+              if (!itemX || !itemY) return false;
+              if (itemX < minX || itemX > maxX || itemY < minY || itemY > maxY)
                 return false;
-              }
 
               const bagelIndex = bagelOrder.current[getBagelIndex(itemY)];
               const bagelItem =
                 bagelIndex !== undefined && defaultBagel[bagelIndex];
+
               if (bagelItem !== IngredientType.EMPTY) {
                 return false;
               }
@@ -177,7 +165,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
               return true;
             },
             itemFn: ({ item, itemY, itemIndex }) => {
-              console.log("itemFn");
+              if (!itemY) return;
               // add it to the defaultBagel state which will cause a render
               // and update the refs
               setDefaultBagel((defaultBagelValue) => {
@@ -201,27 +189,15 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
           width={BAGEL_LIST_WIDTH}
           elementHeight={BAGEL_ELEMENT_HEIGHT}
           items={defaultBagel}
-          bagelOrder={bagelOrder}
+          order={bagelOrder}
           saved={saved}
           getBinPoint={getBinPoint}
+          isOverBin={isOverBin}
           setIsOverBin={setIsOverBin}
           targetSize={BIN_WIDTH}
           joiner={{
-            conditionFn: ({ itemX, itemY }) => {
-              const { x, y } = getBinPoint();
-              const { minX, minY, maxX, maxY } = getBinLimits({
-                binPoint: { x, y },
-                targetSize: BIN_WIDTH,
-              });
-
-              if (itemX < minX || itemY < minY) {
-                return false;
-              }
-
-              return true;
-            },
-            itemFn: ({ item, itemY, itemIndex }) => {
-              // replace it with "empty" in the defaultBagel state
+            itemFn: ({ itemIndex }) => {
+              // replace it with empty in the defaultBagel state
               setDefaultBagel((defaultBagelValue) => {
                 const newBagel = [...defaultBagelValue];
                 newBagel[itemIndex] = IngredientType.EMPTY;

@@ -6,7 +6,7 @@ export type IngredientsProps = {
   items: IngredientType[];
   rows: number;
   cols: number;
-  ingredientsOrder: React.MutableRefObject<number[]>;
+  orderRef: React.MutableRefObject<number[]>;
   elementSize: number;
   joiner?: Joiner;
   springFn: IngredientsSpringFn;
@@ -14,9 +14,9 @@ export type IngredientsProps = {
 
 export type IngredientsSpringFn = (props: {
   order: number[];
+  state?: "default" | "deleted" | "render";
   active?: boolean;
   originalIndex?: number;
-  curIndex?: number;
   x?: number;
   y?: number;
   callback?: () => void;
