@@ -86,22 +86,19 @@ export const BagelList = ({
     },
     onDragEnd: ({ args: [originalIndex], movement: [x, y], ...props }) => {
       const curIndex = order.current.indexOf(originalIndex);
-      const item = items[curIndex];
       const elem = document.elementFromPoint(props.xy[0], props.xy[1]);
       console.info("DROPPED ON ELEM: ", elem);
 
-      if (isOverBin && item) {
+      if (isOverBin) {
         setDeleted(originalIndex);
         const callback = () =>
           joiner?.itemFn({
-            item,
             itemIndex: originalIndex,
           });
         springApi.start(
           springFn({
             order: order.current,
             state: "deleted",
-            active: true,
             originalIndex,
             curIndex,
             deletedOriginalIndex: originalIndex,
@@ -132,7 +129,7 @@ export const BagelList = ({
 
           return !item || item === IngredientType.EMPTY ? (
             <animated.div
-              {...bind(deletedOriginalIndex || i)}
+              {...bind(i)}
               key={i}
               style={{
                 ...style,
@@ -149,7 +146,7 @@ export const BagelList = ({
             </animated.div>
           ) : (
             <animated.div
-              {...bind(deletedOriginalIndex || i)}
+              {...bind(i)}
               key={i}
               style={{
                 ...style,

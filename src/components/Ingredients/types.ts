@@ -17,6 +17,7 @@ export type IngredientsSpringFn = (props: {
   state?: "default" | "deleted" | "render";
   active?: boolean;
   originalIndex?: number;
+  curIndex?: number;
   x?: number;
   y?: number;
   callback?: () => void;

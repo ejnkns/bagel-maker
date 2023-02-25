@@ -1,8 +1,8 @@
 import type { IngredientType } from "@prisma/client";
 
 type JoinerFnProps = {
-  item: IngredientType;
-  itemIndex: number;
+  item?: IngredientType;
+  itemIndex?: number;
   // X and Y are relative to the top right of the component
   itemX?: number;
   itemY?: number;

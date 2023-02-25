@@ -7,7 +7,7 @@ import type { Bagel } from "@prisma/client";
 import { IngredientType } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { api } from "../../utils/api";
-import { getBinLimits, reorderBagel } from "./helpers";
+import { reorderBagel } from "./helpers";
 import { Form } from "./SaveBagelForm";
 import { Bin } from "./Bin";
 import styles from "./BagelMaker.module.css";
@@ -16,7 +16,7 @@ type BagelMakerProps = {
   userBagel?: Bagel;
 };
 
-// component with state for, screensize, bagel and its ingredients to pass to IngredientsHOC, BagelListHOC, and SaveBagel
+// component with state for, screen size, bagel and its ingredients to pass to IngredientsHOC, BagelListHOC, and SaveBagel
 export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   const [defaultBagel, setDefaultBagel] = useState<IngredientType[]>(
     userBagel?.ingredients
@@ -28,7 +28,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
     if (userBagel?.ingredients) setDefaultBagel(userBagel?.ingredients);
   }, [userBagel]);
 
-  const bagelOrder = useRef(defaultBagel.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
+  const bagelOrder = useRef(defaultBagel.map((_, index) => index)); // Store indices as a local ref, this represents the item order
 
   const {
     INGREDIENTS_CELL_SIZE,
@@ -39,7 +39,6 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
     PADDING,
     DROP_PADDING,
     BIN_WIDTH,
-    loading,
   } = useSizes();
 
   const elementSizeDiff = BAGEL_ELEMENT_HEIGHT - INGREDIENTS_CELL_SIZE;
@@ -84,11 +83,11 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   const [defaultIngredients, setDefaultIngredients] = useState<
     IngredientType[]
   >([
-    ...new Array(4).fill(IngredientType.BAGEL),
-    ...new Array(8).fill(IngredientType.LETTUCE),
+    ...new Array(2).fill(IngredientType.BAGEL),
+    ...new Array(4).fill(IngredientType.LETTUCE),
     ...new Array(2).fill(IngredientType.EMPTY),
   ]);
-  const ingredientsOrder = useRef(defaultIngredients.map((_, index) => index)); // Store indicies as a local ref, this represents the item order
+  const ingredientsOrder = useRef(defaultIngredients.map((_, index) => index)); // Store indices as a local ref, this represents the item order
 
   const middleBagelX =
     INGREDIENTS_CELL_SIZE * INGREDIENTS_COLS + PADDING + elementSizeDiff / 2;
@@ -116,12 +115,12 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   const handleSave = (event: FormEvent<HTMLFormElement>) => {
     if (!sessionData?.user || !event.currentTarget) return;
     event.preventDefault();
-    // save bagel to prisma db for user
     const ingredients = reorderBagel({
       bagel: defaultBagel,
       order: bagelOrder.current,
     });
 
+    // save bagel to prisma db for user
     mutation.mutate({
       name: event.currentTarget.nameInput.value,
       ingredients,
@@ -133,7 +132,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
   return (
     <>
       <div
-        key={`${loading}-${defaultBagel.join("-")}`}
+        key={`${INGREDIENTS_CELL_SIZE}-${defaultBagel.join("-")}`}
         className={styles.row}
         style={{
           gap: PADDING,
@@ -151,8 +150,14 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
           joiner={{
             conditionFn: ({ itemX, itemY }) => {
               if (!itemX || !itemY) return false;
-              if (itemX < minX || itemX > maxX || itemY < minY || itemY > maxY)
+              if (
+                itemX < minX ||
+                itemX > maxX ||
+                itemY < minY ||
+                itemY > maxY
+              ) {
                 return false;
+              }
 
               const bagelIndex = bagelOrder.current[getBagelIndex(itemY)];
               const bagelItem =
@@ -165,7 +170,12 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
               return true;
             },
             itemFn: ({ item, itemY, itemIndex }) => {
-              if (!itemY) return;
+              if (
+                itemY === undefined ||
+                item === undefined ||
+                itemIndex === undefined
+              )
+                return;
               // add it to the defaultBagel state which will cause a render
               // and update the refs
               setDefaultBagel((defaultBagelValue) => {
@@ -197,6 +207,7 @@ export const BagelMaker = ({ userBagel }: BagelMakerProps) => {
           targetSize={BIN_WIDTH}
           joiner={{
             itemFn: ({ itemIndex }) => {
+              if (itemIndex === undefined) return;
               // replace it with empty in the defaultBagel state
               setDefaultBagel((defaultBagelValue) => {
                 const newBagel = [...defaultBagelValue];

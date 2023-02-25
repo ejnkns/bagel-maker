@@ -20,21 +20,6 @@ export const Ingredients = ({
   joiner,
 }: IngredientsProps) => {
   const [deletedOriginalIndex, setDeleted] = useState<number>();
-
-  // check if there are any EMPTY items not at the end of the order
-  // if so, move them to the end
-  // useEffect(() => {
-  //   const order = orderRef.current;
-  //   const emptyIndex = order.indexOf(
-  //     items.findIndex((item) => item === IngredientType.EMPTY)
-  //   );
-  //   console.log({ emptyIndex });
-  //   if (emptyIndex !== -1 && emptyIndex !== order.length - 1) {
-  //     const newOrder = move(order, emptyIndex, order.length - 1);
-  //     orderRef.current = newOrder;
-  //   }
-  // }, [items, orderRef]);
-
   const [springs, springApi] = useSprings(
     items.length,
     springFn({
@@ -48,14 +33,15 @@ export const Ingredients = ({
   const bind = useGesture({
     onDrag: ({ args: [originalIndex], active, movement: [x, y] }) => {
       const order = orderRef.current;
-      if (deletedOriginalIndex !== undefined) return;
       const curIndex = order.indexOf(originalIndex);
+      if (deletedOriginalIndex !== undefined) return;
       springApi.start(
         springFn({
           order,
           state: "default",
           active,
           originalIndex,
+          curIndex,
           x,
           y,
           deletedOriginalIndex,
@@ -65,8 +51,8 @@ export const Ingredients = ({
     onDragEnd: ({ args: [originalIndex], movement: [x, y] }) => {
       const order = orderRef.current;
       const curIndex = order.indexOf(originalIndex);
-
-      const item = items[curIndex];
+      const item = items[originalIndex];
+      const newOrder = move(order, curIndex, order.length - 1);
 
       if (
         item &&
@@ -74,14 +60,12 @@ export const Ingredients = ({
         joiner &&
         (!joiner.conditionFn ||
           joiner.conditionFn({
-            item,
-            itemIndex: curIndex,
             itemX: calcOffsetX(curIndex, cols, elementSize, x),
             itemY: calcOffsetY(curIndex, cols, elementSize, y),
           }))
       ) {
         setDeleted(originalIndex);
-        const callback = () =>
+        const callback = () => {
           joiner?.itemFn({
             item,
             itemIndex: originalIndex,
@@ -89,15 +73,19 @@ export const Ingredients = ({
             itemX: calcOffsetX(curIndex, cols, elementSize, x),
             itemY: calcOffsetY(curIndex, cols, elementSize, y),
           });
+
+          orderRef.current = newOrder;
+        };
         springApi.start(
           springFn({
-            order,
+            order: newOrder,
             state: "deleted",
             originalIndex,
+            curIndex,
+            deletedOriginalIndex: originalIndex,
             x,
             y,
             callback,
-            deletedOriginalIndex: originalIndex,
           })
         );
       }
@@ -133,14 +121,14 @@ export const Ingredients = ({
       {springs.map(({ zIndex, y, x, scale, fill }, i) => {
         const item = items[i];
         if (item && item !== IngredientType.EMPTY) {
-          // is it much less performant to have two animted divs nested here than one?
+          // is it much less performant to have two animated divs nested here than one?
           // could move all animation to the svg component
           const ItemComponent = bagelStringToComponentMap[item];
           const AnimatedSvgComponent = ItemComponent && animated(ItemComponent);
           return (
             <animated.div
               {...bind(i)}
-              key={i}
+              key={`${orderRef.current[i]}}`}
               style={{
                 zIndex,
                 y,
